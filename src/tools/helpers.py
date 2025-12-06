@@ -1,5 +1,7 @@
 from typing import List
 
+from scipy.interpolate import interp1d
+
 from rayoptics.environment import *
 from rayoptics.raytr.trace import setup_pupil_coords
 from rayoptics.raytr.waveabr import wave_abr_full_calc
@@ -44,11 +46,16 @@ def eval_abr_fan(opt_model, fi, xy, num_rays=21, **kwargs):
     return seq_model.trace_fan(ray_abr, fi, xy, num_rays=num_rays, **kwargs)
 
 def ray_abr_analysis(opm,num_rays=21,apply_vignetting=True):
+    """
+    returns array of tuples
+    Each tuple has field number, x=0 or y=1, and the analysis results
+    Analysis result is a tuple of [fans_x, fans_y, (max_rho_val, max_y_val), rc]
+    """
     results = []
     fov = opm['osp']['fov']
     for fi,fld in enumerate(fov.fields):
         for xy in range(2):
-            results.append(eval_abr_fan(opm,fi,xy,num_rays=num_rays,append_if_none=False,apply_vignetting=apply_vignetting))
+            results.append((fi,xy,eval_abr_fan(opm,fi,xy,num_rays=num_rays,append_if_none=False,apply_vignetting=apply_vignetting)))
     return results
 
 def generate_hexapolar_points(max_radius: float, num_rings: int)->List[np.ndarray]:
@@ -138,9 +145,11 @@ def spot_analysis(opm,num_rings=21,apply_vignetting=True):
         results.append(seq_model_trace_rings(opm,spot,fi,wl=None,num_rings=num_rings,append_if_none=False,apply_vignetting=apply_vignetting))
     return results
 
-def plot_spot_to_file(results):
+def plot_spot_to_file(opm,results):
+    osp = opm.optical_spec
     for fi,fld_result in enumerate(results):
         data, colors = fld_result
+        fld = osp.field_of_view.fields[fi]
         plt.figure()
         for wi,wvl_result in enumerate(data):
             c = colors[wi]
@@ -150,12 +159,75 @@ def plot_spot_to_file(results):
 
             x *= 1000.
             y *= 1000.
-            plt.scatter(x,y,c=c)
+            plt.scatter(x,y,c=c,s=5)
 
         plt.xlabel('X-axis')
         plt.ylabel('Y-axis')
-        plt.title('Spot ' + str(fi))
+        plt.title("FLD x={}, y={}".format(fld.x, fld.y))
         plt.grid(False)
-
+        plt.gca().set_aspect('equal', adjustable='box')
         plt.savefig("spot" + str(fi) + ".svg", format="svg")
         plt.close()
+
+def multiplot_spot_to_file(opm,results):
+    osp = opm.optical_spec
+    num_rows = len(results)
+    num_cols = 1
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(num_cols * 15, num_rows * 15), sharex=True, sharey=True)
+    for fi,fld_result in enumerate(results):
+        data, colors = fld_result
+        fld = osp.field_of_view.fields[fi]
+        ax = axes[fi]
+        for wi,wvl_result in enumerate(data):
+            c = colors[wi]
+            arr = np.stack(wvl_result)
+            x = arr[:, 0]  # first column
+            y = arr[:, 1]  # second column
+
+            x *= 1000.
+            y *= 1000.
+            ax.scatter(x, y, color=c, s=1)
+
+        ax.set_title("FLD x={}, y={}".format(fld.x, fld.y))
+        ax.grid(False)
+        ax.set_xlim(xmin=-500, xmax=500)
+        ax.set_ylim(ymin=-500, ymax=500)
+        ax.set_aspect("equal", adjustable="box")
+    # maintain equal aspect ratio
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    plt.savefig("spot.svg", format="svg")
+    plt.close()
+
+def plot_ray_abr_to_file(opm,results):
+    osp = opm.optical_spec
+    x_labels = ['Px','Py']
+    y_labels = ['eX','eY']
+    # we want display a row of data per field
+    # and two columns for each field
+    num_fields = len(results)//2
+    num_cols = 2
+    fig, axes = plt.subplots(num_fields, num_cols, figsize=(15, 15), sharex=True, sharey=True)
+    for fi,xy,fld_result in results:
+        fans_x, fans_y, (max_rho_val, max_y_val), colors = fld_result
+        ax = axes[fi,xy]
+        fld = osp.field_of_view.fields[fi]
+        for wi in range(len(fans_x)):
+            c = colors[wi]
+            x = fans_x[wi]
+            y = fans_y[wi]
+            f = interp1d(x, y, kind='cubic')
+            x_new = np.linspace(x.min(), x.max(), 300)
+            y_new = f(x_new)
+            ax.plot(x_new, y_new, color=c)
+
+        ax.set_title("FLD x={}, y={}".format(fld.x, fld.y))
+        ax.set_xlabel(x_labels[xy])
+        ax.set_ylabel(y_labels[xy])
+        ax.grid(True)
+        ax.set_aspect("equal", adjustable="box")
+    # maintain equal aspect ratio
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.savefig("ray-abr.svg", format="svg")
+    plt.title("Ray Aberration Plots")
+    plt.close()
