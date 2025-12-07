@@ -43,3 +43,7 @@ cover/*
 rayoptics-pyscaffold-4_3/*
 roa_new/*
 MANIFEST
+
+*.pyc
+*.svg
+.idea
