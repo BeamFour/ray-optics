@@ -194,6 +194,7 @@ def multiplot_spot_to_file(opm,results):
         ax.set_ylim(ymin=-500, ymax=500)
         ax.set_aspect("equal", adjustable="box")
     fig.suptitle("Spot Diagrams", fontsize=16)
+    fig.tight_layout()
     # maintain equal aspect ratio
     plt.xlabel('X-axis')
     plt.ylabel('Y-axis')
@@ -226,9 +227,9 @@ def plot_ray_abr_to_file(opm,results):
         ax.set_xlabel(x_labels[xy])
         ax.set_ylabel(y_labels[xy])
         ax.grid(True)
-        ax.set_aspect("equal", adjustable="box")
+        #ax.set_aspect("equal", adjustable="box")
     fig.suptitle("Ray Aberration Plots", fontsize=16)
     # maintain equal aspect ratio
-    plt.gca().set_aspect('equal', adjustable='box')
+    #plt.gca().set_aspect('equal', adjustable='box')
     plt.savefig("ray-abr.svg", format="svg")
     plt.close()
