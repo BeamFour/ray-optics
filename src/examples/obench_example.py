@@ -3,7 +3,8 @@ import sys
 from tools.obench2 import read_obench_file
 
 from rayoptics.environment import *
-from tools.helpers import spot_analysis, plot_spot_to_file, ray_abr_analysis, opd_analysis, plot_ray_abr_to_file
+from tools.helpers import spot_analysis, plot_spot_to_file, ray_abr_analysis, opd_analysis, plot_ray_abr_to_file, \
+    multiplot_spot_to_file
 import matplotlib.pyplot as plt
 from rayoptics.raytr.trace import apply_paraxial_vignetting
 
@@ -31,6 +32,7 @@ layout_plt.savefig("layout.svg", format="svg")
 
 spot_results = spot_analysis(opm,num_rings=21,apply_vignetting=True)
 plot_spot_to_file(opm,spot_results)
+multiplot_spot_to_file(opm,spot_results)
 
 ray_abr_results = ray_abr_analysis(opm,num_rays=21,apply_vignetting=True)
 plot_ray_abr_to_file(opm,ray_abr_results)
