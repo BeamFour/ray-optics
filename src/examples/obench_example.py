@@ -7,6 +7,7 @@ from tools.helpers import spot_analysis, plot_spot_to_file, ray_abr_analysis, op
     multiplot_spot_to_file
 import matplotlib.pyplot as plt
 from rayoptics.raytr.trace import apply_paraxial_vignetting
+from rayoptics.raytr.vigcalc import set_vig
 
 if len(sys.argv) > 1:
     arg = sys.argv[1]
@@ -18,11 +19,15 @@ opm,dict = read_obench_file(arg)
 
 osp = opm.optical_spec
 sm = opm.seq_model
+fov = osp['fov']
 sm.list_surfaces()
 sm.list_gaps()
 sm.do_apertures = False
 opm.update_model()
-apply_paraxial_vignetting(opm)
+if fov.is_wide_angle:
+    set_vig(opm,use_bisection=True)
+else:
+    apply_paraxial_vignetting(opm)
 sm.list_model()
 listobj(osp)
 
