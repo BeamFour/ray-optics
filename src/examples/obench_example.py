@@ -31,6 +31,8 @@ else:
 sm.list_model()
 listobj(osp)
 
+#opm.save_model("test.roa")
+
 layout_plt = plt.figure(FigureClass=InteractiveLayout, opt_model=opm, do_draw_rays=True, do_paraxial_layout=False,
                         is_dark=True).plot()
 layout_plt.savefig("layout.svg", format="svg")
