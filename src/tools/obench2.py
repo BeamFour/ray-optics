@@ -145,9 +145,13 @@ def read_lens(inpts, opt_model=None) -> OpticalModel:
     if "constants" in inpts:
         constants_inpt = inpts['constants']
         constants = {c_item[0]: c_item[1:] for c_item in constants_inpt}
+    else:
+        constants = {}
     if "variable distances" in inpts:
         var_dists_inpt = inpts['variable distances']
         var_dists = {var_dist[0]: var_dist[1:] for var_dist in var_dists_inpt}
+    else:
+        var_dists = {}
 
 
     thi_obj = 1.0e10
@@ -169,11 +173,10 @@ def read_lens(inpts, opt_model=None) -> OpticalModel:
     sm.do_apertures = False
     sm.gaps[0].thi = thi_obj
 
-    if "constants" in inpts:
-        if 'ObjectGlass' in constants:
-            nd_obj = read_float(constants['ObjectGlass'][0])
-            vd_obj = read_float(constants['ObjectGlass'][1])
-            sm.gaps[0].medium = mg.ModelGlass(nd_obj, vd_obj, 'ObjectGlass')
+    if 'ObjectGlass' in constants:
+        nd_obj = read_float(constants['ObjectGlass'][0])
+        vd_obj = read_float(constants['ObjectGlass'][1])
+        sm.gaps[0].medium = mg.ModelGlass(nd_obj, vd_obj, 'ObjectGlass')
 
     osp = opt_model['optical_spec']
     if 'F-Number' in var_dists:
@@ -234,11 +237,10 @@ def read_lens(inpts, opt_model=None) -> OpticalModel:
             surfaces[surf_id] = sm.cur_surface  # note surface num
     if 'aspherical data' in inpts:
         typ = 'Aspherical'
-        if "constants" in inpts:
-            if 'AsphericalOddCount' in constants:
-                typ = 'AsphericalOddCount'
-            elif 'AsphericalA2' in constants:
-                typ = 'AsphericalA2'
+        if 'AsphericalOddCount' in constants:
+            typ = 'AsphericalOddCount'
+        elif 'AsphericalA2' in constants:
+            typ = 'AsphericalA2'
          
         input_lines = inpts['aspherical data']
         _track_contents[typ] = len(input_lines)
