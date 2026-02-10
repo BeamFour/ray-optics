@@ -1,13 +1,13 @@
 import sys
 
-from tools.obench2 import read_obench_file
+from tools.obench2 import read_obench_file,read_obench_url
 
 from rayoptics.environment import *
 from tools.helpers import spot_analysis, plot_spot_to_file, ray_abr_analysis, opd_analysis, plot_ray_abr_to_file, \
     multiplot_spot_to_file
 import matplotlib.pyplot as plt
 from rayoptics.raytr.trace import apply_paraxial_vignetting
-from rayoptics.raytr.vigcalc import set_vig
+from rayoptics.raytr.vigcalc import set_vig, set_clear_apertures
 
 if len(sys.argv) > 1:
     arg = sys.argv[1]
@@ -16,6 +16,7 @@ else:
     quit(1)
 
 opm,dict = read_obench_file(arg)
+#opm,dict = read_obench_url(arg)
 
 osp = opm.optical_spec
 sm = opm.seq_model
@@ -24,17 +25,19 @@ sm.list_surfaces()
 sm.list_gaps()
 sm.do_apertures = False
 opm.update_model()
-if fov.is_wide_angle:
-    set_vig(opm,use_bisection=True)
-else:
-    apply_paraxial_vignetting(opm)
+set_stop_aperture(opm)
+#set_clear_apertures(opm)
+#if fov.is_wide_angle:
+#    set_vig(opm)
+#else:
+#    apply_paraxial_vignetting(opm)
 sm.list_model()
 listobj(osp)
 
 #opm.save_model("test.roa")
 
 layout_plt = plt.figure(FigureClass=InteractiveLayout, opt_model=opm, do_draw_rays=True, do_paraxial_layout=False,
-                        is_dark=True).plot()
+                        is_dark=False).plot()
 layout_plt.savefig("layout.svg", format="svg")
 
 spot_results = spot_analysis(opm,num_rings=21,apply_vignetting=True)
